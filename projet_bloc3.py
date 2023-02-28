@@ -46,7 +46,7 @@ def amers(Nb_amer : int, x0 : float, y0 : float) :
     xa = m[:,0]
     ya = m[:,1]
     
-    return (xa,ya)
+    return (xa,ya,Nb_amer)
 
 
 #definir le robot
@@ -62,26 +62,115 @@ theta_r = 0
 t=0
 r = np.array([[x_r, y_r, theta_r]])
 r1 = r
+(xa,ya,Nb_amer)=amers(8,0,1)    # 8 amers, position du premier a (0,1)
 
-## Calcul des positions du robot
-while(t<10):
-    u = np.array([[1 , 0 , 0]])
+
+
+#main
+
+dist = 0
+i = 0
+if Nb_amer % 2 == 0 :
+
+    #Aller en x
+
+    while(dist<1) :
+        u = np.array([[1 , 0 , 0]])
+
+        r1 = robot(r1,u)
+        r = np.concatenate((r, r1), axis = 0)
+        
+        dist = r[i,0] - xa[int(Nb_amer/2-1)]
+        i += 1
+
+    #Rotation
+
+    u = np.array([[0 , 0 , np.pi/2]])
+
     r1 = robot(r1,u)
     r = np.concatenate((r, r1), axis = 0)
-    #plt.scatter(r[t,0],r[t,1])
-    t=t+1
-print(r)
+
+    i += 1
+
+    #Aller en y
+
+    dist = 0
+    while(dist<=1):
+        u = np.array([[0 , 1 , 0]])
+
+        r1 = robot(r1,u)
+        r = np.concatenate((r, r1), axis = 0)
+
+        dist = r[i,1] - ya[int(Nb_amer/2)]
+
+        i += 1
 
 
-#Affichage
-t = 0
-fig, ax = plt.subplots()
-while(t<10):
+    #Rotation
+
+    u = np.array([[0 , 0 , np.pi/2]])
+
+    r1 = robot(r1,u)
+    r = np.concatenate((r, r1), axis = 0)
+
+    i += 1
+
+    #Retour en x
+
+    dist = r[i,0] 
+    while(dist>1):
+        u = np.array([[-1 , 0 , 0]])
+
+        r1 = robot(r1,u)
+        r = np.concatenate((r, r1), axis = 0)
+
+        dist = r[i,0] - xa[0]
+        i += 1    
+else :
+    while(dist<1) :
+        u = np.array([[1 , 0 , 0]])
+
+        r1 = robot(r1,u)
+        r = np.concatenate((r, r1), axis = 0)
+
+        dist = r[i,0] - xa[int(Nb_amer/2)]
+        i += 1
+    u = np.array([[0 , 0 , np.pi/2]])
+
+    r1 = robot(r1,u)
+    r = np.concatenate((r, r1), axis = 0)
+
+    i += 1
+    dist = 0
+    while(dist<=0):
+        u = np.array([[0 , 1 , 0]])
+
+        r1 = robot(r1,u)
+        r = np.concatenate((r, r1), axis = 0)
+
+        dist = r[i,1] - ya[int(Nb_amer/2)+1]
+        i += 1
+    u = np.array([[0 , 0 , np.pi/2]])
+
+    r1 = robot(r1,u)
+    r = np.concatenate((r, r1), axis = 0)
+
+    i += 1
+    dist = r1[i,0] - xa[0]
+    while(dist>0):
+        u = np.array([[-1 , 0 , 0]])
+
+        r1 = robot(r1,u)
+        r = np.concatenate((r, r1), axis = 0)
     
-## Affichage de la map
-    (xa,ya)=amers(8,0,1)    # 8 amers, position du premier a (0,1)
-    ax.scatter(xa,ya)
+        dist = r[i,0] - xa[0]
+        i += 1
 
-#Affichage de la trajectoire du robot dans la map
-    ax.plot(r[t,0], r[t,1])
-    plt.show()
+# Affichage
+# Affichage de la map
+plt.scatter(xa, ya)
+# Affichage de la trajectoire du robot dans la map
+plt.plot(r[:, 0], r[:, 1])
+
+plt.show()
+print(u.shape)
