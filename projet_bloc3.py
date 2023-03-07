@@ -252,14 +252,28 @@ else:
     T = i
 
 affichage(xa, ya, r, T)
+
+
+#Création du vecteur d'etat
 m = np.array([xa,ya])
-#X = np.array([[r.transpose() , m.transpose()]]).transpose()
-#print(X)
-print("rt =\n", r.transpose())
-print("mt =\n", m.transpose())
-"""
-print("xa =", xa)
-print("ya =", ya)
-print("r =", r)
-print("m =", m)
-"""
+m = m.transpose()
+z = np.array([0,0])
+compteur = Nb_amer
+while compteur <= i:
+    m = np.append(m, [z], axis = 0)
+    compteur = compteur + 1
+
+X = np.concatenate((r, m), axis=1)
+X = X.transpose()
+print("X =", X)
+
+
+#Creation du vecteur observation
+
+H = np.array([[ 1 , 0 , 0, 0, 0 ] , [ 0 , 1 , 0, 0, 0 ] , [ 0 , 0 , 1, 0, 0 ]])
+Rv = np.array([[ 360000 , 0 ] , [ 0 , 360000 ]])
+V = np.linalg.cholesky(Rv)
+V = V.transpose
+hasard = np.random.randin()
+#V = V * 
+
