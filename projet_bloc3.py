@@ -271,9 +271,10 @@ print("X =", X)
 #Creation du vecteur observation
 
 H = np.array([[ 1 , 0 , 0, 0, 0 ] , [ 0 , 1 , 0, 0, 0 ] , [ 0 , 0 , 1, 0, 0 ]])
-Rv = np.array([[ 360000 , 0 ] , [ 0 , 360000 ]])
+Rv = np.array([[ 360000 , 0 , 0 ] , [ 0 , 360000 , 0 ] , [ 0 , 0 , 360000 ] ])
 V = np.linalg.cholesky(Rv)
-V = V.transpose
-hasard = np.random.randin()
-#V = V * 
-
+V = V.transpose()
+hasard = np.random.randn(3,i+1)
+V = V @ hasard
+Z = H @ X + V
+print("Z =", Z)
