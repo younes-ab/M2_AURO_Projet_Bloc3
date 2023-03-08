@@ -44,13 +44,22 @@ def amers(Nb_amer : int, x0 : float, y0 : float) :
         
     xa = m[:,0]
     ya = m[:,1]
+
+    pos_a = np.concatenate(m)
     
-    return (xa,ya,Nb_amer)
+    return (pos_a,Nb_amer)
 
 
 #definir le robot
 def deplacement_robot(r : float, u : float):
-    r = r + u
+    if(u[1] == 0):
+        r[0] = r[0] + (u[0]) * (math.sin(r[2]+u[1]) - math.sin(r[2]))
+        r[1] = r[1] + (u[0]) * (math.cos(r[2]) - math.cos(r[2]+u[1]))
+        r[2] = r[2] + u[1]
+    else:
+        r[0] = r[0] + (u[0]/u[1]) * (math.sin(r[2]+u[1]) - math.sin(r[2]))
+        r[1] = r[1] + (u[0]/u[1]) * (math.cos(r[2]) - math.cos(r[2]+u[1]))
+        r[2] = r[2] + u[1]
     return (r)
 
 #affichage
@@ -76,9 +85,9 @@ theta_r = 0
 t = 0
 r = np.array([[x_r, y_r, theta_r]])
 r1 = r
-u = np.array([[1, 0, 0]])
-(xa, ya, Nb_amer) = amers(9, 1, -0.5)    # 8 amers, position du premier a (1,1)
-
+u = np.array([[1, 0]])
+(pos_a, Nb_amer) = amers(8, 1, -0.5)    # 8 amers, position du premier a (1,1)
+#print(pos_a)
 
 
 # main
@@ -92,7 +101,7 @@ if Nb_amer % 2 == 0:
 
     #Aller en x
     while(dist<0):
-        u1 = np.array([[1, 0, 0]])
+        u1 = np.array([[1, 0]])
 
         r1 = deplacement_robot(r1,u1)
         r = np.concatenate((r, r1), axis = 0)
@@ -102,18 +111,18 @@ if Nb_amer % 2 == 0:
         i += 1
     
     #Rotation
-    u1 = np.array([[0 , 0 , np.pi/2]])
+    u1 = np.array([[1 , np.pi/8]])
 
     r1 = deplacement_robot(r1,u1)
     r = np.concatenate((r, r1), axis = 0)
     u = np.concatenate((u, u1), axis=0)
 
     i += 1
-
+    """
     #Aller en y
     dist = r[i,1] - ya[int(Nb_amer/2)]
     while(dist<0):
-        u1 = np.array([[0 , 1 , 0]])
+        u1 = np.array([[1 , 0]])
 
         r1 = deplacement_robot(r1,u1)
         r = np.concatenate((r, r1), axis = 0)
@@ -125,18 +134,18 @@ if Nb_amer % 2 == 0:
 
 
     #Rotation
-    u1 = np.array([[0 , 0 , np.pi/2]])
+    u1 = np.array([[1 , np.pi/8]])
 
     r1 = deplacement_robot(r1,u1)
     r = np.concatenate((r, r1), axis = 0)
     u = np.concatenate((u, u1), axis=0)
 
     i += 1
-
+    """
     #Retour en x
     dist = r[i,0] - xa[0]
     while(dist>0):
-        u1 = np.array([[-1 , 0 , 0]])
+        u1 = np.array([[1 , 0]])
 
         r1 = deplacement_robot(r1,u1)
         r = np.concatenate((r, r1), axis = 0)
@@ -146,14 +155,14 @@ if Nb_amer % 2 == 0:
         i += 1
 
     # Rotation
-    u1 = np.array([[0, 0, np.pi / 2]])
+    u1 = np.array([[1, 0, np.pi / 8]])
 
     r1 = deplacement_robot(r1, u1)
     r = np.concatenate((r, r1), axis=0)
     u = np.concatenate((u, u1), axis=0)
 
     i += 1
-
+    """
     # Retour en y
     dist = r[i, 1] - ya[Nb_amer-1]
 
@@ -167,8 +176,9 @@ if Nb_amer % 2 == 0:
         dist = r[i, 1] - ya[Nb_amer-1]
 
         i += 1
+    """
     T = i
-
+"""
 #Nb_amer impair
 else:
 
@@ -250,17 +260,16 @@ else:
 
         i += 1
     T = i
-
-affichage(xa, ya, r, T)
+"""
 
 
 #Création du vecteur d'etat
-m = np.array([xa,ya])
+m = np.array([xa,ya,])
 m = m.transpose()
-z = np.array([0,0])
+#z = np.array([0,0])
 compteur = Nb_amer
 while compteur <= i:
-    m = np.append(m, [z], axis = 0)
+    m = np.append(m, [np.array([0,0,0])], axis = 0)
     compteur = compteur + 1
 
 X = np.concatenate((r, m), axis=1)
@@ -278,3 +287,7 @@ hasard = np.random.randn(3,i+1)
 V = V @ hasard
 Z = H @ X + V
 print("Z =", Z)
+
+
+
+affichage(xa, ya, r, T)
