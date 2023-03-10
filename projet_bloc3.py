@@ -51,17 +51,17 @@ def amers(Nb_amer : int, x0 : float, y0 : float) :
 
 
 #definir le robot
-def deplacement_robot(r : float, u : float):
+def deplacement_robot(rd : float, u : float):
     #print(u[1])
     if(u[0,1] == 0):
-        r[0,0] = r[0,0] + (u[0,0]) * math.cos(r[0,2])
-        r[0,1] = r[0,1] + (u[0,0]) * math.sin(r[0,2])
-        r[0,2] = r[0,2] + u[0,1]
+        rd[0,0] = rd[0,0] + (u[0,0]) * math.cos(rd[0,2])
+        rd[0,1] = rd[0,1] + (u[0,0]) * math.sin(rd[0,2])
+        rd[0,2] = rd[0,2] + u[0,1]
     else:
-        r[0,0] = r[0,0] + (u[0,0]/u[0,1]) * (math.sin(r[0,2]+u[0,1]) - math.sin(r[0,2]))
-        r[0,1] = r[0,1] + (u[0,0]/u[0,1]) * (math.cos(r[0,2]) - math.cos(r[0,2]+u[0,1]))
-        r[0,2] = r[0,2] + u[0,1]
-    return (r)
+        rd[0,0] = rd[0,0] + (u[0,0]/u[0,1]) * (math.sin(rd[0,2]+u[0,1]) - math.sin(rd[0,2]))
+        rd[0,1] = rd[0,1] + (u[0,0]/u[0,1]) * (math.cos(rd[0,2]) - math.cos(rd[0,2]+u[0,1]))
+        rd[0,2] = rd[0,2] + u[0,1]
+    return (rd)
 
 #affichage
 def affichage(xa:float, ya:float, r:float, T:int):
@@ -86,7 +86,7 @@ def affichage(xa:float, ya:float, r:float, T:int):
 
 
 ## Initialisation
-x_r = 0.1
+x_r = 0
 y_r = 0
 theta_r = 0
 t = 0
@@ -117,13 +117,16 @@ if Nb_amer % 2 == 0:
         #print("u1", u1[0,1])
 
         r1 = deplacement_robot(r1,u1)
+
+        print("r : ", r)
+
         r = np.concatenate((r, r1), axis = 0)
-        #print("r : ", r)
+        print("r x aller : ", r)
         u = np.concatenate((u, u1), axis=0)
         #print("u : ", u)
         
         dist = r[i,0] - pos_a[Nb_amer-2]
-        print("dist x aller", dist)
+        #print("dist x aller", dist)
         i += 1
     
     #Rotation
@@ -136,8 +139,9 @@ if Nb_amer % 2 == 0:
         #print("r : ", r)
         u = np.concatenate((u, u1), axis=0)
         dist_y = r[i,1] - pos_a[Nb_amer+1]
-        print("dist y aller", dist_y)
+        #print("dist y aller", dist_y)
         i += 1
+    print("r : ", r)
     """
     #Aller en y
     dist = r[i,1] - ya[int(Nb_amer/2)]
@@ -171,11 +175,11 @@ if Nb_amer % 2 == 0:
 
         r1 = deplacement_robot(r1,u1)
         r = np.concatenate((r, r1), axis = 0)
-        print("r : ", r)
+        #print("r : ", r)
         u = np.concatenate((u, u1), axis=0)
 
         dist = r[i,0] - pos_a[0]
-        print("dist x retour ", dist)
+        #print("dist x retour ", dist)
         i += 1
 
     # Rotation
