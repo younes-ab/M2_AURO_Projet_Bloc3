@@ -48,7 +48,7 @@ def amers(Nb_amer : int, x0 : float, y0 : float) :
 
 
 #definir le robot
-def deplacement_robot(r : float, u : float):
+def deplacement_robot(r : float, u : float, v : float):
     if(u[0,1] == 0):
         r[0,0] = r[0,0] + (u[0,0]) * math.cos(r[0,2])
         r[0,1] = r[0,1] + (u[0,0]) * math.sin(r[0,2])
@@ -57,6 +57,9 @@ def deplacement_robot(r : float, u : float):
         r[0,0] = r[0,0] + (u[0,0]/u[0,1]) * (math.sin(r[0,2]+u[0,1]) - math.sin(r[0,2]))
         r[0,1] = r[0,1] + (u[0,0]/u[0,1]) * (math.cos(r[0,2]) - math.cos(r[0,2]+u[0,1]))
         r[0,2] = r[0,2] + u[0,1]
+    r[0,0] = r[0,0] + v[0]
+    r[0,1] = r[0,1] + v[1]
+    r[0,2] = r[0,2] + v[2]
     return (r)
 
 #affichage
@@ -72,8 +75,8 @@ def affichage(pos_a:float, r:float, T:int):
     # Affichage du robot dans son dernier etat
     plt.scatter(r[T, 0], r[T, 1])                     #remplacer t par le dernier indice du vecteur Temps
 
-    print('u.shape : ', u.shape)
-    print('r.shape : ', r.shape)
+    #print('u.shape : ', u.shape)
+    #print('r.shape : ', r.shape)
     
     plt.show()
 
@@ -90,6 +93,13 @@ u = np.array([[1, 0]])
 i = 0
 T = 0
 
+H = np.array([[ 1 , 0 , 0, 0, 0 ] , [ 0 , 1 , 0, 0, 0 ] , [ 0 , 0 , 1, 0, 0 ]])
+
+Rv = np.diag([0.000001, 0.000001, 0.000001])
+v = np.transpose((np.linalg.cholesky(Rv))@(np.random.normal(size=(3,39))))
+Q = np.diag([0.002, 0.002, 0.002, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001])
+w = np.transpose((np.linalg.cholesky(Q))@(np.random.normal(size=(19,39))))
+
 
 #Nb_amer pair
 if Nb_amer % 2 == 0:
@@ -99,7 +109,7 @@ if Nb_amer % 2 == 0:
     #Aller en x
     while(dist<0):
         u1 = np.array([[1, 0]])
-        r1 = deplacement_robot(r1,u1)
+        r1 = deplacement_robot(r1,u1,v[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis=0)
         
@@ -109,7 +119,7 @@ if Nb_amer % 2 == 0:
     #Rotation
     while(r[i,2] < np.pi):
         u1 = np.array([[0.5 , np.pi/8]])
-        r1 = deplacement_robot(r1,u1)
+        r1 = deplacement_robot(r1,u1,v[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis=0)
 
@@ -120,9 +130,9 @@ if Nb_amer % 2 == 0:
     dist = r[i,0] - pos_a[0]
     while(dist>0):
         u1 = np.array([[1 , 0]])
-        r1 = deplacement_robot(r1,u1)
+        r1 = deplacement_robot(r1,u1,v[i])
         r = np.concatenate((r, r1), axis = 0)
-        u = np.concatenate((u, u1), axis=0)
+        u = np.concatenate((u, u1), axis = 0)
 
         dist = r[i,0] - pos_a[0]
         i += 1
@@ -130,7 +140,7 @@ if Nb_amer % 2 == 0:
     # Rotation
     while(r[i,2] < np.pi*2):
         u1 = np.array([[0.5, np.pi / 8]])
-        r1 = deplacement_robot(r1, u1)
+        r1 = deplacement_robot(r1, u1,v[i])
         r = np.concatenate((r, r1), axis=0)
         u = np.concatenate((u, u1), axis=0)
 
@@ -140,13 +150,13 @@ if Nb_amer % 2 == 0:
     dist = r[i,0] - pos_a[2]
     while(dist<0):
         u1 = np.array([[1, 0]])
-        r1 = deplacement_robot(r1,u1)
+        r1 = deplacement_robot(r1,u1,v[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis=0)
         
         dist = r[i,0] - pos_a[2]
         i += 1
-    print("r apres x aller 2 : ", r)
+    #print("r apres x aller 2 : ", r)
     print("r.shape : ", r.shape)
     
     T = i
@@ -235,22 +245,27 @@ else:
 """
 
 
-"""
+
+
+#print("T : ", T)
+print("pos_a.shape : ", pos_a.shape)
+
 
 #Création du vecteur d'etat
-m = np.array([pos_a])
-m = m.transpose()
-#z = np.array([0,0])
-compteur = Nb_amer
-while compteur <= i:
-    m = np.append(m, [np.array([0,0,0])], axis = 0)
-    compteur = compteur + 1
+X = np.array([np.concatenate((r[0], pos_a), axis=0)])
 
-X = np.concatenate((r, m), axis=1)
-X = X.transpose()
-print("X =", X)
+i=1
+while(i<=T):
+    inter = np.array([np.concatenate((r[i], pos_a), axis=0)])
+    X = np.concatenate((X, inter), axis=0)
+    i += 1
+print("X.shape : ", X.shape)
 
 
+#affichage(pos_a, r, T)
+
+
+"""
 #Creation du vecteur observation
 
 H = np.array([[ 1 , 0 , 0, 0, 0 ] , [ 0 , 1 , 0, 0, 0 ] , [ 0 , 0 , 1, 0, 0 ]])
@@ -266,3 +281,6 @@ print("Z =", Z)
 
 
 affichage(pos_a, r, T)
+
+print("w.shape : ", w.shape)
+print("v.shape : ", v.shape)
