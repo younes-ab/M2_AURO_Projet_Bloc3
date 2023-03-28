@@ -43,6 +43,9 @@ def amers(Nb_amer : int, x0 : float, y0 : float) :
     ya = m[:,1]
 
     pos_a = np.concatenate(m)
+
+    incertitude_amer = np.diag(0.00001*np.ones(2*Nb_amer))
+    pos_a = pos_a + (np.linalg.cholesky(incertitude_amer))@(np.random.normal(size=(16)))
     
     return (pos_a,Nb_amer)
 
@@ -95,21 +98,22 @@ T = 0
 
 H = np.array([[ 1 , 0 , 0, 0, 0 ] , [ 0 , 1 , 0, 0, 0 ] , [ 0 , 0 , 1, 0, 0 ]])
 
-Rv = np.diag([0.000001, 0.000001, 0.000001])
-v = np.transpose((np.linalg.cholesky(Rv))@(np.random.normal(size=(3,39))))
-Q = np.diag([0.002, 0.002, 0.002, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001])
-w = np.transpose((np.linalg.cholesky(Q))@(np.random.normal(size=(19,39))))
+Q = np.diag([0.000001, 0.000001, 0.000001])
+#v = np.transpose((np.linalg.cholesky(Rv))@(np.random.normal(size=(3,39))))
+#Q = np.diag([0.002, 0.002, 0.002, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001])
+w = np.transpose((np.linalg.cholesky(Q))@(np.random.normal(size=(3,39))))
 
+print("w:", w[0])
 
 #Nb_amer pair
 if Nb_amer % 2 == 0:
     
     dist = r[0,0] - pos_a[Nb_amer-2]     # x_robot - x_amer_(4)
-
+    
     #Aller en x
     while(dist<0):
         u1 = np.array([[1, 0]])
-        r1 = deplacement_robot(r1,u1,v[i])
+        r1 = deplacement_robot(r1,u1,w[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis=0)
         
@@ -117,9 +121,9 @@ if Nb_amer % 2 == 0:
         i += 1
 
     #Rotation
-    while(r[i,2] < np.pi):
+    while(r[i,2] < np.pi*0.99):
         u1 = np.array([[0.5 , np.pi/8]])
-        r1 = deplacement_robot(r1,u1,v[i])
+        r1 = deplacement_robot(r1,u1,w[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis=0)
 
@@ -130,7 +134,7 @@ if Nb_amer % 2 == 0:
     dist = r[i,0] - pos_a[0]
     while(dist>0):
         u1 = np.array([[1 , 0]])
-        r1 = deplacement_robot(r1,u1,v[i])
+        r1 = deplacement_robot(r1,u1,w[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis = 0)
 
@@ -138,9 +142,9 @@ if Nb_amer % 2 == 0:
         i += 1
 
     # Rotation
-    while(r[i,2] < np.pi*2):
+    while(r[i,2] < np.pi*2*0.99):
         u1 = np.array([[0.5, np.pi / 8]])
-        r1 = deplacement_robot(r1, u1,v[i])
+        r1 = deplacement_robot(r1, u1, w[i])
         r = np.concatenate((r, r1), axis=0)
         u = np.concatenate((u, u1), axis=0)
 
@@ -150,7 +154,7 @@ if Nb_amer % 2 == 0:
     dist = r[i,0] - pos_a[2]
     while(dist<0):
         u1 = np.array([[1, 0]])
-        r1 = deplacement_robot(r1,u1,v[i])
+        r1 = deplacement_robot(r1,u1,w[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis=0)
         
@@ -283,4 +287,4 @@ print("Z =", Z)
 affichage(pos_a, r, T)
 
 print("w.shape : ", w.shape)
-print("v.shape : ", v.shape)
+#print("v.shape : ", v.shape)
