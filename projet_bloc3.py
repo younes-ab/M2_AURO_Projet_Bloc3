@@ -83,6 +83,19 @@ def affichage(pos_a:float, r:float, T:int):
     
     plt.show()
 
+#Generation des observations
+def generation_mesure(z1:float, r1:float, pos_a:float, v:float):
+    for e in range(Nb_amer):
+        z1[0, e*2] = math.sqrt((r1[0,0]-pos_a[2*e])**2 + (r1[0,1]-pos_a[2*e+1])**2) + v[e]
+        z1[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r1[0,1], pos_a[2*e]-r1[0,0]) - r1[0,2] + v[e+1]
+
+        if (z1[0,e*2] > 4 or abs(z1[0,e*2+1])>np.pi/4):
+            z1[0, e * 2] = np.nan
+            z1[0, e * 2 + 1] = np.nan
+
+    #print("z1.shape : ", z1.shape)
+    return z1
+
 
 ## Initialisation
 x_r = 0.1
@@ -98,12 +111,16 @@ T = 0
 
 H = np.array([[ 1 , 0 , 0, 0, 0 ] , [ 0 , 1 , 0, 0, 0 ] , [ 0 , 0 , 1, 0, 0 ]])
 
-Q = np.diag([0.000001, 0.000001, 0.000001])
-#v = np.transpose((np.linalg.cholesky(Rv))@(np.random.normal(size=(3,39))))
-#Q = np.diag([0.002, 0.002, 0.002, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001, 0.000000001])
-w = np.transpose((np.linalg.cholesky(Q))@(np.random.normal(size=(3,39))))
+Qw = np.diag([0.000001, 0.000001, 0.000001])
+w = np.transpose((np.linalg.cholesky(Qw))@(np.random.normal(size=(3,39))))
+Rv = np.diag(0.000001*np.ones(2*Nb_amer))
+v = np.transpose((np.linalg.cholesky(Rv))@(np.random.normal(size=(2*Nb_amer,39))))
 
-print("w:", w[0])
+
+z = np.array([np.ones(2*Nb_amer)])
+z = generation_mesure(z, r1, pos_a, v[i])
+z1 = np.array([np.ones(2*Nb_amer)])
+
 
 #Nb_amer pair
 if Nb_amer % 2 == 0:
@@ -116,6 +133,8 @@ if Nb_amer % 2 == 0:
         r1 = deplacement_robot(r1,u1,w[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis=0)
+        z1 = generation_mesure(z1, r1, pos_a, v[i])
+        z = np.concatenate((z, z1), axis=0)
         
         dist = r[i,0] - pos_a[Nb_amer-2]
         i += 1
@@ -126,6 +145,8 @@ if Nb_amer % 2 == 0:
         r1 = deplacement_robot(r1,u1,w[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis=0)
+        z1 = generation_mesure(z1, r1, pos_a, v[i])
+        z = np.concatenate((z, z1), axis=0)
 
         dist_y = r[i,1] - pos_a[Nb_amer+1]
         i += 1
@@ -137,6 +158,8 @@ if Nb_amer % 2 == 0:
         r1 = deplacement_robot(r1,u1,w[i])
         r = np.concatenate((r, r1), axis = 0)
         u = np.concatenate((u, u1), axis = 0)
+        z1 = generation_mesure(z1, r1, pos_a, v[i])
+        z = np.concatenate((z, z1), axis=0)
 
         dist = r[i,0] - pos_a[0]
         i += 1
@@ -147,18 +170,22 @@ if Nb_amer % 2 == 0:
         r1 = deplacement_robot(r1, u1, w[i])
         r = np.concatenate((r, r1), axis=0)
         u = np.concatenate((u, u1), axis=0)
+        z1 = generation_mesure(z1, r1, pos_a, v[i])
+        z = np.concatenate((z, z1), axis=0)
 
         i += 1
 
     #Aller 2 en x 
-    dist = r[i,0] - pos_a[2]
+    dist = r[i, 0] - pos_a[2]
     while(dist<0):
         u1 = np.array([[1, 0]])
-        r1 = deplacement_robot(r1,u1,w[i])
-        r = np.concatenate((r, r1), axis = 0)
+        r1 = deplacement_robot(r1, u1, w[i])
+        r = np.concatenate((r, r1), axis=0)
         u = np.concatenate((u, u1), axis=0)
+        z1 = generation_mesure(z1, r1, pos_a, v[i])
+        z = np.concatenate((z, z1), axis=0)
         
-        dist = r[i,0] - pos_a[2]
+        dist = r[i, 0] - pos_a[2]
         i += 1
     #print("r apres x aller 2 : ", r)
     print("r.shape : ", r.shape)
@@ -248,43 +275,25 @@ else:
     T = i
 """
 
-
-
-
 #print("T : ", T)
-print("pos_a.shape : ", pos_a.shape)
 
 
 #Création du vecteur d'etat
 X = np.array([np.concatenate((r[0], pos_a), axis=0)])
-
-i=1
+i = 1
 while(i<=T):
     inter = np.array([np.concatenate((r[i], pos_a), axis=0)])
     X = np.concatenate((X, inter), axis=0)
     i += 1
 print("X.shape : ", X.shape)
 
+print("z.shape : ", z.shape)
+#print("z[0] : ", z[0])
+#print("z[1] : ", z[1])
 
-#affichage(pos_a, r, T)
-
-
-"""
-#Creation du vecteur observation
-
-H = np.array([[ 1 , 0 , 0, 0, 0 ] , [ 0 , 1 , 0, 0, 0 ] , [ 0 , 0 , 1, 0, 0 ]])
-Rv = np.array([[ 360000 , 0 , 0 ] , [ 0 , 360000 , 0 ] , [ 0 , 0 , 360000 ] ])
-V = np.linalg.cholesky(Rv)
-V = V.transpose()
-hasard = np.random.randn(3,i+1)
-V = V @ hasard
-Z = H @ X + V
-print("Z =", Z)
-
-"""
 
 
 affichage(pos_a, r, T)
 
 print("w.shape : ", w.shape)
-#print("v.shape : ", v.shape)
+print("v.shape : ", v.shape)
