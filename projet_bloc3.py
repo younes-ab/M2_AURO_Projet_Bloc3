@@ -65,7 +65,7 @@ def deplacement_robot(r : float, u : float, w : float):
     return (r)
 
 #affichage
-def affichage(pos_a:float, r:float, T:int):
+def affichage(pos_a:float, r:float, T:int, r_maj_tab:float):
     # Affichage de la map
     i = 0
     while(i < int(pos_a.shape[0])):
@@ -76,9 +76,12 @@ def affichage(pos_a:float, r:float, T:int):
     plt.plot(r[:, 0], r[:, 1])
     # Affichage du robot dans son dernier etat
     plt.scatter(r[T, 0], r[T, 1])                     #remplacer t par le dernier indice du vecteur Temps
+    # Affichage des états robot
+    plt.plot(r_maj_tab[:, 0], r_maj_tab[:, 1])
+    # Affichage du robot dans son dernier etat predit
+    plt.scatter(r_maj_tab[T, 0], r_maj_tab[T, 1]) 
 
-    #print('u.shape : ', u.shape)
-    #print('r.shape : ', r.shape)
+    print("T : ", T)
     
     plt.show()
 
@@ -124,13 +127,12 @@ u = np.array([[1, 0]])
 Nb_amer = 8
 i = 0
 T = 0
-H = np.array([[ 1 , 0 , 0, 0, 0 ] , [ 0 , 1 , 0, 0, 0 ] , [ 0 , 0 , 1, 0, 0 ]])
 
-Qw = np.diag([0.000001, 0.000001, 0.000001])
+Qw = np.diag([0.001, 0.001, 0.001])
 w = np.transpose((np.linalg.cholesky(Qw))@(np.random.normal(size=(3,39))))
-Rv = np.diag(0.000001*np.ones(2*Nb_amer))
+Rv = np.diag(0.0001*np.ones(2*Nb_amer))
 v = np.transpose((np.linalg.cholesky(Rv))@(np.random.normal(size=(2*Nb_amer,39))))              
-incertitude_amer = np.diag(0.00001*np.ones(2*Nb_amer))
+incertitude_amer = np.diag(0.000001*np.ones(2*Nb_amer))
 
 pos_a = amers(Nb_amer, 1, -0.5, incertitude_amer)    # 8 amers, position du premier a (1,1)
 
@@ -164,7 +166,7 @@ if Nb_amer % 2 == 0:
         i += 1
 
     #Rotation
-    while(r[i,2] < np.pi*0.99):
+    while(r[i,2] < np.pi*0.95):
         u1 = np.array([[0.5 , np.pi/8]])
         r1 = deplacement_robot(r1,u1,w[i])
         r = np.concatenate((r, r1), axis = 0)
@@ -189,7 +191,7 @@ if Nb_amer % 2 == 0:
         i += 1
 
     # Rotation
-    while(r[i,2] < np.pi*2*0.99):
+    while(r[i,2] < np.pi*2*0.95):
         u1 = np.array([[0.5, np.pi / 8]])
         r1 = deplacement_robot(r1, u1, w[i])
         r = np.concatenate((r, r1), axis=0)
@@ -201,7 +203,7 @@ if Nb_amer % 2 == 0:
 
     #Aller 2 en x 
     dist = r[i, 0] - pos_a[2]
-    while(dist<0):
+    while(dist<0 or i<38):
         u1 = np.array([[1, 0]])
         r1 = deplacement_robot(r1, u1, w[i])
         r = np.concatenate((r, r1), axis=0)
@@ -215,92 +217,6 @@ if Nb_amer % 2 == 0:
     print("r.shape : ", r.shape)
     
     T = i
-"""
-#Nb_amer impair
-else:
-
-    dist = r[i,0] - xa[int(Nb_amer/2)]
-
-    #Aller en x
-    while(dist<0):
-        u1 = np.array([[1 , 0 , 0]])
-
-        r1 = deplacement_robot(r1,u1)
-        r = np.concatenate((r, r1), axis = 0)
-        u = np.concatenate((u, u1), axis=0)
-
-        dist = r[i,0] - xa[int(Nb_amer/2)]
-        i += 1
-
-    #Rotation
-    u1 = np.array([[0 , 0 , np.pi/2]])
-
-    r1 = deplacement_robot(r1,u1)
-    r = np.concatenate((r, r1), axis = 0)
-    u = np.concatenate((u, u1), axis=0)
-
-    i += 1
-
-    #Aller en y
-    dist = r[i,1] - ya[int(Nb_amer/2)+1]
-    while(dist<0):
-        u1 = np.array([[0 , 1 , 0]])
-
-        r1 = deplacement_robot(r1,u1)
-        r = np.concatenate((r, r1), axis = 0)
-        u = np.concatenate((u, u1), axis=0)
-
-        dist = r[i,1] - ya[int(Nb_amer/2)+1]
-        i += 1
-
-    #Rotation
-    u1 = np.array([[0 , 0 , np.pi/2]])
-
-    r1 = deplacement_robot(r1,u1)
-    r = np.concatenate((r, r1), axis = 0)
-    u = np.concatenate((u, u1), axis=0)
-
-    i += 1
-
-    #Retour en x
-    dist = r[i,0] - xa[0]
-    while(dist>0):
-        u1 = np.array([[-1 , 0 , 0]])
-
-        r1 = deplacement_robot(r1,u1)
-        r = np.concatenate((r, r1), axis = 0)
-        u = np.concatenate((u, u1), axis=0)
-    
-        dist = r[i,0] - xa[0]
-        i += 1
-
-    # Rotation
-    u1 = np.array([[0, 0, np.pi / 2]])
-
-    r1 = deplacement_robot(r1, u1)
-    r = np.concatenate((r, r1), axis=0)
-    u = np.concatenate((u, u1), axis=0)
-
-    i += 1
-
-    # Retour en y
-    dist = r[i, 1] - ya[Nb_amer-1]
-
-    while (dist > 0):
-        u1 = np.array([[0, -1, 0]])
-
-        r1 = deplacement_robot(r1, u1)
-        r = np.concatenate((r, r1), axis=0)
-        u = np.concatenate((u, u1), axis=0)
-
-        dist = r[i, 1] - ya[Nb_amer-1]
-
-        i += 1
-    T = i
-"""
-
-#print("T : ", T)
-
 
 #Création du vecteur d'etat
 X = np.array([np.concatenate((r[0], pos_a), axis=0)])
@@ -326,21 +242,21 @@ P_maj = np.zeros((19,19))
 K = np.zeros((19,16))
 r_pred = np.zeros((1,3))
 r_maj = np.zeros((1,3))
-F = np.zeros((19,19))
+F = np.identity(19)
 H = np.zeros((16,19))
 z_pred = np.zeros((1,16))
 
-C = [r_pred, P_pred, r_maj, P_maj, K]
-#print (C)
+r_maj_tab = np.zeros((1,3))
+
 
 print("r_pred : ", r_pred.shape)
 print("pos_a : ", pos_a.shape)
 
-for i in range (T-1):
+for i in range (T+1):
     r_pred = deplacement_robot(r_maj, u[[0]], w[i]) - w[[i]]
     x_pred = np.concatenate((r_pred, [pos_a]), axis=1)
     F = F_san(F, r_pred , u)
-    P_pred = F @ P_pred @ F.T + Qw_real 
+    P_pred = F @ P_maj @ F.T + Qw_real 
     for e in range(Nb_amer):
         H[2*e,0] = (2*r_pred[0,0]-2*pos_a[2*e]) / (2*math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)) 
         H[2*e,1] = (2*r_pred[0,1]-2*pos_a[2*e+1]) / (2*math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)) 
@@ -358,9 +274,14 @@ for i in range (T-1):
         z_pred[0, e*2] = math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)  
         z_pred[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]) - r_pred[0,2]
     x_maj = x_pred + K @ (z[i]-z_pred[0])
+    r_maj[0] = x_maj[0,0:3]
+    r_maj_tab = np.concatenate((r_maj_tab,r_maj), axis = 0) 
     P_maj = P_pred - K @ H @ P_pred
-
 
 #print("z[i] : ", z[i])
 print("u : ", u.shape)
 #print("x_maj : ", x_maj)
+print ("r_maj_tab.shape : ", r_maj_tab.shape)
+
+affichage(pos_a, r, T, r_maj_tab)
+
