@@ -87,16 +87,30 @@ def affichage(pos_a:float, r:float, T:int, r_maj_tab:float):
 def generation_mesure(z1:float, r1:float, pos_a:float, v:float):
     for e in range(Nb_amer):
         z1[0, e*2] = math.sqrt((pos_a[2*e]-r1[0,0])**2 + (pos_a[2*e+1]-r1[0,1])**2) + v[e]
-        z1[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r1[0,1], pos_a[2*e]-r1[0,0]) + v[e+1] - r1[0,2]
+        z1[0, 2*e+1] = (math.atan2(pos_a[2*e+1]-r1[0,1], pos_a[2*e]-r1[0,0]) + v[e+1] - r1[0,2]) % (np.pi*2)
 
-        #if (abs(z1[0,e*2]) > 4):# or abs(z1[0,e*2+1])>np.pi/2):
-        #    z1[0, e * 2] = np.nan
-        #    z1[0, e * 2 + 1] = np.nan
-        if(z1[0,e*2+1] > math.pi/2 or z1[0,e*2+1] < -math.pi/2):
+
+        # if(r1[0,2]>=0 and r1[0,2]<np.pi/2):
+        #     z1[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r1[0,1], pos_a[2*e]-r1[0,0]) + v[e+1] - r1[0,2]
+
+        # if(r1[0,2]>=np.pi/2 and r1[0,2]<np.pi):
+        #     z1[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r1[0,1], pos_a[2*e]-r1[0,0]) + v[e+1] - r1[0,2]
+
+        # if(r1[0,2]>=np.pi and r1[0,2]<np.pi*3/2):
+        #     z1[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r1[0,1], pos_a[2*e]-r1[0,0]) + v[e+1] - r1[0,2]
+
+        # if(r1[0,2]>=np.pi*3/2 and r1[0,2]<0):
+        #     z1[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r1[0,1], pos_a[2*e]-r1[0,0]) + v[e+1] - r1[0,2]
+
+        if (z1[0,e*2] > 4 or abs(z1[0,e*2+1])>np.pi/2):
             z1[0, e * 2] = np.nan
             z1[0, e * 2 + 1] = np.nan
+        # if(z1[0,e*2+1] > math.pi/2 or z1[0,e*2+1] < -math.pi/2):
+        #     z1[0, e * 2] = np.nan
+        #     z1[0, e * 2 + 1] = np.nan
 
-    #print("z1.shape : ", z1.shape)
+    #print("z1 : ", z1)
+    print("z1.shape : ", z1.shape)
     return z1
 
 
@@ -128,7 +142,7 @@ u = np.array([[1, 0]])
 Nb_amer = 8
 i = 0
 
-Qw = np.diag([0.001, 0.001, 0.001])
+Qw = np.diag([0.00001, 0.00001, 0.00001])
 w = np.transpose((np.linalg.cholesky(Qw))@(np.random.normal(size=(3,39))))
 Rv = np.diag(0.0001*np.ones(2*Nb_amer))
 v = np.transpose((np.linalg.cholesky(Rv))@(np.random.normal(size=(2*Nb_amer,39))))              
@@ -257,9 +271,20 @@ print("u.shape : ", u.shape)
 
 for i in range (N):
     r_pred = deplacement_robot(r_maj, u[[0]], w[i]) - w[[i]]
+    # print ("r_pred : ", r_pred)
+    # print ("r_maj : ", r_maj)
+
     x_pred = np.concatenate((r_pred, [pos_a]), axis=1)
+    #print ("x_pred : ", x_pred)
+
     F = F_san(F, r_pred , u)
+    #print ("F : ", F)
+
     P_pred = F @ P_maj @ F.T + Qw_real 
+    #print ("P_pred[0] : ", P_pred[0])
+    #print ("P_maj[0] : ", P_maj[0])
+    
+
     for e in range(Nb_amer):
         H[2*e,0] = (2*r_pred[0,0]-2*pos_a[2*e]) / (2*math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)) 
         H[2*e,1] = (2*r_pred[0,1]-2*pos_a[2*e+1]) / (2*math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)) 
@@ -271,12 +296,27 @@ for i in range (N):
         H[2*e+1,2] = -1
         H[2*e+1,3+2*e] = (-(pos_a[2*e+1]-r_pred[0,1]) / (pos_a[2*e]-r_pred[0,0])**2 ) / (1 + (math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]))**2) 
         H[2*e+1,4+2*e] = (1 / (pos_a[2*e]-r_pred[0,0])) / (1 + (math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]))**2)
+    #print ("H[0] : ", H[0])
+
     S = Rv + H @ P_pred @ H.T
+    #print ("S : ", S)
+
     K = P_pred @ H.T @ np.linalg.inv(S)
+    #print ("K : ", K)
+
     for e in range(Nb_amer):
         z_pred[0, e*2] = math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)  
         z_pred[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]) - r_pred[0,2]
+        #print ("z_pred : ", z_pred)
+
+
     x_maj = x_pred + K @ (z[i]-z_pred[0])
+    #print ("x_maj : ", x_maj)
+    #print ("z[i] : ", z[i])
+    #print ("z[i]-z_pred[0] : ", z[i]-z_pred[0])
+    #print ("K @ (z[i]-z_pred[0]) : ", K @ (z[i]-z_pred[0]))
+    
+
     r_maj[0] = x_maj[0,0:3]
     P_maj = P_pred - K @ H @ P_pred
     if(i==0):
@@ -291,8 +331,9 @@ print("u : ", u.shape)
 #print("x_maj : ", x_maj)
 print ("r_maj_tab.shape : ", r_maj_tab.shape)
 #print ("r_maj_tab : ", r_maj_tab)
+
 print("T : ", T)
 print("N iterations : ", N)
 
-affichage(pos_a, r, T, r_maj_tab)
+#affichage(pos_a, r, T, r_maj_tab)
 
