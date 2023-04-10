@@ -86,12 +86,15 @@ def affichage(pos_a:float, r:float, T:int, r_maj_tab:float):
 #Generation des observations
 def generation_mesure(z1:float, r1:float, pos_a:float, v:float):
     for e in range(Nb_amer):
-        z1[0, e*2] = math.sqrt((r1[0,0]-pos_a[2*e])**2 + (r1[0,1]-pos_a[2*e+1])**2) + v[e]  
-        z1[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r1[0,1], pos_a[2*e]-r1[0,0]) - r1[0,2] + v[e+1]
+        z1[0, e*2] = math.sqrt((pos_a[2*e]-r1[0,0])**2 + (pos_a[2*e+1]-r1[0,1])**2) + v[e]
+        z1[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r1[0,1], pos_a[2*e]-r1[0,0]) + v[e+1] - r1[0,2]
 
-        #if (z1[0,e*2] > 4 or abs(z1[0,e*2+1])>np.pi/4):
+        #if (abs(z1[0,e*2]) > 4):# or abs(z1[0,e*2+1])>np.pi/2):
         #    z1[0, e * 2] = np.nan
         #    z1[0, e * 2 + 1] = np.nan
+        if(z1[0,e*2+1] > math.pi/2 or z1[0,e*2+1] < -math.pi/2):
+            z1[0, e * 2] = np.nan
+            z1[0, e * 2 + 1] = np.nan
 
     #print("z1.shape : ", z1.shape)
     return z1
@@ -226,6 +229,7 @@ while(i<=T):
 
 print("X.shape : ", X.shape)
 print("z.shape : ", z.shape)
+print("z : ", z)
 print("w.shape : ", w.shape)
 print("v.shape : ", v.shape)
 
