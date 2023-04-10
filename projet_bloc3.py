@@ -79,9 +79,7 @@ def affichage(pos_a:float, r:float, T:int, r_maj_tab:float):
     # Affichage des états robot
     plt.plot(r_maj_tab[:, 0], r_maj_tab[:, 1])
     # Affichage du robot dans son dernier etat predit
-    plt.scatter(r_maj_tab[T, 0], r_maj_tab[T, 1]) 
-
-    print("T : ", T)
+    plt.scatter(r_maj_tab[T, 0], r_maj_tab[T, 1])
     
     plt.show()
 
@@ -126,7 +124,6 @@ r1 = np.array([[x_r, y_r, theta_r]])
 u = np.array([[1, 0]])
 Nb_amer = 8
 i = 0
-T = 0
 
 Qw = np.diag([0.001, 0.001, 0.001])
 w = np.transpose((np.linalg.cholesky(Qw))@(np.random.normal(size=(3,39))))
@@ -216,7 +213,8 @@ if Nb_amer % 2 == 0:
     #print("r apres x aller 2 : ", r)
     print("r.shape : ", r.shape)
     
-    T = i
+    T = i           #Temps
+    N = i + 1       #N iterations
 
 #Création du vecteur d'etat
 X = np.array([np.concatenate((r[0], pos_a), axis=0)])
@@ -230,7 +228,6 @@ print("X.shape : ", X.shape)
 print("z.shape : ", z.shape)
 print("w.shape : ", w.shape)
 print("v.shape : ", v.shape)
-#affichage(pos_a, r, T)
 
 
 #Initialisation
@@ -251,8 +248,10 @@ r_maj_tab = np.zeros((1,3))
 
 print("r_pred : ", r_pred.shape)
 print("pos_a : ", pos_a.shape)
+print("w.shape : ", w.shape)
+print("u.shape : ", u.shape)
 
-for i in range (T+1):
+for i in range (N):
     r_pred = deplacement_robot(r_maj, u[[0]], w[i]) - w[[i]]
     x_pred = np.concatenate((r_pred, [pos_a]), axis=1)
     F = F_san(F, r_pred , u)
@@ -275,13 +274,21 @@ for i in range (T+1):
         z_pred[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]) - r_pred[0,2]
     x_maj = x_pred + K @ (z[i]-z_pred[0])
     r_maj[0] = x_maj[0,0:3]
-    r_maj_tab = np.concatenate((r_maj_tab,r_maj), axis = 0) 
     P_maj = P_pred - K @ H @ P_pred
+    if(i==0):
+        r_maj_tab = r_maj
+        P_maj_tab = P_maj
+    else:
+        r_maj_tab = np.concatenate((r_maj_tab,r_maj), axis = 0)
+        P_maj_tab = np.concatenate((P_maj_tab, P_maj), axis=0)
 
 #print("z[i] : ", z[i])
 print("u : ", u.shape)
 #print("x_maj : ", x_maj)
 print ("r_maj_tab.shape : ", r_maj_tab.shape)
+#print ("r_maj_tab : ", r_maj_tab)
+print("T : ", T)
+print("N iterations : ", N)
 
 affichage(pos_a, r, T, r_maj_tab)
 
