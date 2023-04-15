@@ -259,7 +259,7 @@ r_pred = np.zeros((1,3))
 r_maj = np.zeros((1,3))
 F = np.identity(19)
 H = np.zeros((16,19))
-z_pred = np.zeros((1,16))
+#z_pred = np.zeros((1,16))
 
 r_maj_tab = np.zeros((1,3))
 
@@ -269,7 +269,17 @@ print("pos_a : ", pos_a.shape)
 print("w.shape : ", w.shape)
 print("u.shape : ", u.shape)
 
+
+
 for i in range (N):
+    # Recup obs sans nan ex:z_use
+    amers_visibles = []
+    for j in range(Nb_amer):
+        if(np.isnan(z[i][2*j]) == False):
+            #z_visible = np.concatenate((z_visible, [z[i][2*j], z[i][2*j+1]]), axis=1)
+            amers_visibles = amers_visibles + [j]
+    print("amers_visibles : ", amers_visibles)
+
     r_pred = deplacement_robot(r_maj, u[[0]], w[i]) - w[[i]]
     # print ("r_pred : ", r_pred)
     # print ("r_maj : ", r_maj)
@@ -304,13 +314,33 @@ for i in range (N):
     K = P_pred @ H.T @ np.linalg.inv(S)
     #print ("K : ", K)
 
-    for e in range(Nb_amer):
-        z_pred[0, e*2] = math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)  
-        z_pred[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]) - r_pred[0,2]
-        #print ("z_pred : ", z_pred)
+    #for e in range(Nb_amer):
+    z_visible = np.zeros((1, len(amers_visibles*2)))
+    z_pred = np.zeros((1, len(amers_visibles*2)))
+    for o in amers_visibles:
+        for e in range(len(amers_visibles)):
+            z_visible[0, e * 2] = z[i][2 * o]
+            z_visible[0, 2 * e + 1] = z[i][2 * o + 1]
+            z_pred[0, e*2] = math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)
+            z_pred[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]) - r_pred[0,2]
+        print ("z_pred : ", z_pred)
+        print("z[i] : ", z[i])
+        print("z_visible : ", z_visible)
+    # for o in amers_visibles:
+    #     for e in range(len(amers_visibles)):
+    #         if(e % 2 == 0):
+    #             z_visible[0, e * 2] = z[i][2 * o]
+    #         else:
+    #             e = e - 1
+    #             z_visible[0, 2 * e + 1] = z[i][2 * o + 1]
+    #         z_pred[0, e*2] = math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)
+    #         z_pred[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]) - r_pred[0,2]
+    #     print ("z_pred : ", z_pred)
+    #     print("z[i] : ", z[i])
+    #     print("z_visible : ", z_visible)
 
-
-    x_maj = x_pred + K @ (z[i]-z_pred[0])
+    #x_maj = x_pred + K @ (z[i]-z_pred[0])
+    x_maj = x_pred + K @ (z_visible[0] - z_pred[0])
     #print ("x_maj : ", x_maj)
     #print ("z[i] : ", z[i])
     #print ("z[i]-z_pred[0] : ", z[i]-z_pred[0])
@@ -326,7 +356,9 @@ for i in range (N):
         r_maj_tab = np.concatenate((r_maj_tab,r_maj), axis = 0)
         P_maj_tab = np.concatenate((P_maj_tab, P_maj), axis=0)
 
-#print("z[i] : ", z[i])
+print("K.shape : ", K.shape)
+print("z.shape : ", z.shape)
+print("z[i] : ", z[i])
 print("u : ", u.shape)
 #print("x_maj : ", x_maj)
 print ("r_maj_tab.shape : ", r_maj_tab.shape)
@@ -335,5 +367,5 @@ print ("r_maj_tab.shape : ", r_maj_tab.shape)
 print("T : ", T)
 print("N iterations : ", N)
 
-#affichage(pos_a, r, T, r_maj_tab)
+affichage(pos_a, r, T, r_maj_tab)
 
