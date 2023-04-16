@@ -258,10 +258,9 @@ K = np.zeros((19,16))
 r_pred = np.zeros((1,3))
 r_maj = np.zeros((1,3))
 F = np.identity(19)
-H = np.zeros((16,19))
-#z_pred = np.zeros((1,16))
 
 r_maj_tab = np.zeros((1,3))
+P_maj_tab = np.zeros((19,19))
 
 
 print("r_pred : ", r_pred.shape)
@@ -272,11 +271,12 @@ print("u.shape : ", u.shape)
 
 
 for i in range (N):
+    print("\nInstant n°",i)
+
     # Recup obs sans nan ex:z_use
     amers_visibles = []
     for j in range(Nb_amer):
         if(np.isnan(z[i][2*j]) == False):
-            #z_visible = np.concatenate((z_visible, [z[i][2*j], z[i][2*j+1]]), axis=1)
             amers_visibles = amers_visibles + [j]
     print("amers_visibles : ", amers_visibles)
 
@@ -293,57 +293,48 @@ for i in range (N):
     P_pred = F @ P_maj @ F.T + Qw_real 
     #print ("P_pred[0] : ", P_pred[0])
     #print ("P_maj[0] : ", P_maj[0])
-    
 
-    for e in range(Nb_amer):
-        H[2*e,0] = (2*r_pred[0,0]-2*pos_a[2*e]) / (2*math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)) 
-        H[2*e,1] = (2*r_pred[0,1]-2*pos_a[2*e+1]) / (2*math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)) 
-        H[2*e,3+2*e] = (-2*r_pred[0,0]+2*pos_a[2*e]) / (2*math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2))
-        H[2*e,4+2*e] = (-2*r_pred[0,1]+2*pos_a[2*e+1]) / (2*math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2))
-        
-        H[2*e+1,0] = ( (pos_a[2*e+1]-r_pred[0,1]) / (pos_a[2*e]-r_pred[0,0])**2 ) / (1 + (math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]))**2)
-        H[2*e+1,1] = -(1 / (pos_a[2*e]-r_pred[0,0])) / (1 + (math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]))**2)
-        H[2*e+1,2] = -1
-        H[2*e+1,3+2*e] = (-(pos_a[2*e+1]-r_pred[0,1]) / (pos_a[2*e]-r_pred[0,0])**2 ) / (1 + (math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]))**2) 
-        H[2*e+1,4+2*e] = (1 / (pos_a[2*e]-r_pred[0,0])) / (1 + (math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]))**2)
-    #print ("H[0] : ", H[0])
+
+    z_visible = np.zeros((1, len(amers_visibles * 2)))
+    z_pred = np.zeros((1, len(amers_visibles * 2)))
+    H = np.zeros((len(amers_visibles*2), 19))
+    Rv = np.zeros((len(amers_visibles * 2), len(amers_visibles * 2)))
+    for o in range(int(len(amers_visibles))):
+        Rv[2 * o][2 * o] = 0.1
+        Rv[2 * o + 1][2 * o + 1] = np.pi/100
+
+    for e in range(len(amers_visibles)):
+        z_visible[0, e * 2] = z[i][2 * amers_visibles[e]]
+        z_visible[0, 2 * e + 1] = z[i][2 * amers_visibles[e] + 1]
+        z_pred[0, e * 2] = math.sqrt((r_pred[0, 0] - pos_a[2 * e]) ** 2 + (r_pred[0, 1] - pos_a[2 * e + 1]) ** 2)
+        z_pred[0, 2 * e + 1] = math.atan2(pos_a[2 * e + 1] - r_pred[0, 1], pos_a[2 * e] - r_pred[0, 0]) - r_pred[0, 2]
+
+        H[2*e, 0] = (2 * r_pred[0, 0] - 2 * pos_a[2 * amers_visibles[e]]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+        H[2*e, 1] = (2 * r_pred[0, 1] - 2 * pos_a[2 * amers_visibles[e] + 1]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+        H[2*e, 3+2*amers_visibles[e]] = (-2 * r_pred[0, 0] + 2 * pos_a[2 * amers_visibles[e]]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+        H[2*e, 4+2*amers_visibles[e]] = (-2 * r_pred[0, 1] + 2 * pos_a[2 * amers_visibles[e] + 1]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+
+        H[2*e+1, 0] = ((pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1]) / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0]) ** 2) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
+        H[2*e+1, 1] = -(1 / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
+        H[2*e+1, 2] = -1
+        H[2*e+1, 3+2*amers_visibles[e]] = (-(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1]) / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0]) ** 2) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
+        H[2*e+1, 4+2*amers_visibles[e]] = (1 / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
+    # print ("H[0] : ", H[0])
+    print("z_pred : ", z_pred)
+    print("z_visible : ", z_visible)
 
     S = Rv + H @ P_pred @ H.T
-    #print ("S : ", S)
+    # print ("S : ", S)
 
     K = P_pred @ H.T @ np.linalg.inv(S)
-    #print ("K : ", K)
-
-    #for e in range(Nb_amer):
-    z_visible = np.zeros((1, len(amers_visibles*2)))
-    z_pred = np.zeros((1, len(amers_visibles*2)))
-    for o in amers_visibles:
-        for e in range(len(amers_visibles)):
-            z_visible[0, e * 2] = z[i][2 * o]
-            z_visible[0, 2 * e + 1] = z[i][2 * o + 1]
-            z_pred[0, e*2] = math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)
-            z_pred[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]) - r_pred[0,2]
-        print ("z_pred : ", z_pred)
-        print("z[i] : ", z[i])
-        print("z_visible : ", z_visible)
-    # for o in amers_visibles:
-    #     for e in range(len(amers_visibles)):
-    #         if(e % 2 == 0):
-    #             z_visible[0, e * 2] = z[i][2 * o]
-    #         else:
-    #             e = e - 1
-    #             z_visible[0, 2 * e + 1] = z[i][2 * o + 1]
-    #         z_pred[0, e*2] = math.sqrt((r_pred[0,0]-pos_a[2*e])**2 + (r_pred[0,1]-pos_a[2*e+1])**2)
-    #         z_pred[0, 2*e+1] = math.atan2(pos_a[2*e+1]-r_pred[0,1], pos_a[2*e]-r_pred[0,0]) - r_pred[0,2]
-    #     print ("z_pred : ", z_pred)
-    #     print("z[i] : ", z[i])
-    #     print("z_visible : ", z_visible)
+    print("K.shape : ", K.shape)
 
     #x_maj = x_pred + K @ (z[i]-z_pred[0])
+    print ("K.shape : ", K.shape)
+    #print ("z_visible[i]-z_pred[0] : ", z_visible[i]-z_pred[0])
+    #print("z[i].shape : ", z[i].shape)
     x_maj = x_pred + K @ (z_visible[0] - z_pred[0])
     #print ("x_maj : ", x_maj)
-    #print ("z[i] : ", z[i])
-    #print ("z[i]-z_pred[0] : ", z[i]-z_pred[0])
     #print ("K @ (z[i]-z_pred[0]) : ", K @ (z[i]-z_pred[0]))
     
 
@@ -355,6 +346,7 @@ for i in range (N):
     else:
         r_maj_tab = np.concatenate((r_maj_tab,r_maj), axis = 0)
         P_maj_tab = np.concatenate((P_maj_tab, P_maj), axis=0)
+
 
 print("K.shape : ", K.shape)
 print("z.shape : ", z.shape)
