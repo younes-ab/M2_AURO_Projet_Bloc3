@@ -309,16 +309,46 @@ for i in range (N):
         z_pred[0, e * 2] = math.sqrt((r_pred[0, 0] - pos_a[2 * e]) ** 2 + (r_pred[0, 1] - pos_a[2 * e + 1]) ** 2)
         z_pred[0, 2 * e + 1] = math.atan2(pos_a[2 * e + 1] - r_pred[0, 1], pos_a[2 * e] - r_pred[0, 0]) - r_pred[0, 2]
 
-        H[2*e, 0] = (2 * r_pred[0, 0] - 2 * pos_a[2 * amers_visibles[e]]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
-        H[2*e, 1] = (2 * r_pred[0, 1] - 2 * pos_a[2 * amers_visibles[e] + 1]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
-        H[2*e, 3+2*amers_visibles[e]] = (-2 * r_pred[0, 0] + 2 * pos_a[2 * amers_visibles[e]]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
-        H[2*e, 4+2*amers_visibles[e]] = (-2 * r_pred[0, 1] + 2 * pos_a[2 * amers_visibles[e] + 1]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+        # H[2*e, 0] = (2 * r_pred[0, 0] - 2 * pos_a[2 * amers_visibles[e]]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+        # H[2*e, 1] = (2 * r_pred[0, 1] - 2 * pos_a[2 * amers_visibles[e] + 1]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+        # H[2*e, 3+2*amers_visibles[e]] = (-2 * r_pred[0, 0] + 2 * pos_a[2 * amers_visibles[e]]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+        # H[2*e, 4+2*amers_visibles[e]] = (-2 * r_pred[0, 1] + 2 * pos_a[2 * amers_visibles[e] + 1]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+        #
+        # H[2*e+1, 0] = ((pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1]) / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0]) ** 2) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
+        # H[2*e+1, 1] = -(1 / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
+        # H[2*e+1, 2] = -1
+        # H[2*e+1, 3+2*amers_visibles[e]] = (-(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1]) / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0]) ** 2) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
+        # H[2*e+1, 4+2*amers_visibles[e]] = (1 / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
 
-        H[2*e+1, 0] = ((pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1]) / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0]) ** 2) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
-        H[2*e+1, 1] = -(1 / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
-        H[2*e+1, 2] = -1
-        H[2*e+1, 3+2*amers_visibles[e]] = (-(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1]) / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0]) ** 2) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
-        H[2*e+1, 4+2*amers_visibles[e]] = (1 / (pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) / (1 + (math.atan2(pos_a[2 * amers_visibles[e] + 1] - r_pred[0, 1], pos_a[2 * amers_visibles[e]] - r_pred[0, 0])) ** 2)
+        # H[2 * i][0] = -2 * (X[int(3 + indZ[i])] - X[0]) * 1 / (2 * math.sqrt(Zuse[int(2 * i)]))
+        H[2*e, 0] = -2 * (pos_a[amers_visibles[e]] - r_pred[0,0]) * 1 / (2*math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+
+        # H[2 * i][1] = -2 * (X[int(3 + indZ[i] + 1)] - X[1]) * 1 / (2 * math.sqrt(Zuse[int(2 * i)]))
+        H[2 * e, 1] = -2 * (pos_a[amers_visibles[e] + 1] - r_pred[0, 1]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+
+        # H[2 * i][int(3 + 2 * indZ[i])] = 2 * (X[int(3 + indZ[i])] - X[0]) * 1 / (2 * math.sqrt(Zuse[int(2 * i)]))
+        H[2 * e, 3 + 2 * amers_visibles[e]] = 2 * (pos_a[amers_visibles[e]] - r_pred[0, 0]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+
+        # H[2 * i][int(3 + 2 * indZ[i] + 1)] = 2 * (X[int(3 + indZ[i] + 1)] - X[1]) * 1 / (2 * math.sqrt(Zuse[int(2 * i)]))
+        H[2 * e, 4 + 2 * amers_visibles[e]] = 2 * (pos_a[amers_visibles[e] + 1] - r_pred[0, 1]) / (2 * math.sqrt((r_pred[0, 0] - pos_a[2 * amers_visibles[e]]) ** 2 + (r_pred[0, 1] - pos_a[2 * amers_visibles[e] + 1]) ** 2))
+
+        # H[2 * i + 1][0] = (X[int(3 + indZ[i] + 1)] - X[2]) / ((X[int(3 + indZ[i])] - X[1]) ** 2 + (X[int(3 + indZ[i] + 1)] - X[2]) ** 2)
+        H[2 * e + 1, 0] = (pos_a[amers_visibles[e] + 1] - r_pred[0,2]) / ((pos_a[amers_visibles[e]] - r_pred[0,1]) **2 + (pos_a[amers_visibles[e] + 1] - r_pred[0,2]) **2)
+
+        # H[2 * i + 1][1] = -(X[int(3 + indZ[i])] - X[1]) / (
+        #             (X[int(3 + indZ[i])] - X[1]) ** 2 + (X[int(3 + indZ[i] + 1)] - X[2]) ** 2)
+        H[2 * e + 1, 1] = -(pos_a[amers_visibles[e]] - r_pred[0,1]) / ((pos_a[amers_visibles[e]] - r_pred[0,1]) **2 + (pos_a[amers_visibles[e] +1] - r_pred[0,2]) **2)
+
+        # H[2 * i + 1][2] = -1
+        H[2 * e + 1, 2] = -1
+
+        # H[2 * i + 1][int(3 + 2 * indZ[i])] = -(X[int(3 + indZ[i] + 1)] - X[2]) / (
+        #             (X[int(3 + indZ[i])] - X[1]) ** 2 + (X[int(3 + indZ[i] + 1)] - X[2]) ** 2)
+        H[2 * e + 1, 3 + 2 * amers_visibles[e]] = -(pos_a[amers_visibles[e] +1] - r_pred[0,2]) / ((pos_a[amers_visibles[e]] - r_pred[0,1]) **2 + (pos_a[amers_visibles[e] +1] - r_pred[0,2])**2)
+
+        # H[2 * i + 1][int(3 + 2 * indZ[i] + 1)] = (X[int(3 + indZ[i])] - X[1]) / (
+        #             (X[int(3 + indZ[i])] - X[1]) ** 2 + (X[int(3 + indZ[i] + 1)] - X[2]) ** 2)
+        H[2*e+1, 4+2*amers_visibles[e]] = (pos_a[amers_visibles[e]] - r_pred[0,1]) / ((pos_a[amers_visibles[e]] - r_pred[0,1])**2 + (pos_a[amers_visibles[e] +1] - r_pred[0,2])**2)
     # print ("H[0] : ", H[0])
     print("z_pred : ", z_pred)
     print("z_visible : ", z_visible)
