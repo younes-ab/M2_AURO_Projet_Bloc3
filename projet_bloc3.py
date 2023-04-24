@@ -291,6 +291,7 @@ for i in range (N):
     for o in range(len(amers_visibles)):
         Rv[2 * o][2 * o] = 0.01
         Rv[2 * o + 1][2 * o + 1] = np.pi/10
+    Rv = np.diag(0.0001 * np.ones(len(amers_visibles*2)))
 
     for e in range(len(amers_visibles)):
         z_visible[0, e * 2] = z[i][2 * amers_visibles[e]]
@@ -325,7 +326,7 @@ for i in range (N):
     print("z_visible : ", z_visible)
     print("r_pred : ", r_pred)
 
-    S = Rv + H @ P_pred @ H.T
+    S = Rv + H @ P_pred @ np.transpose(H)
     # print ("S : ", S)
 
     K = P_pred @ H.T @ np.linalg.inv(S)
@@ -336,7 +337,7 @@ for i in range (N):
     #print ("z_visible[i]-z_pred[0] : ", z_visible[i]-z_pred[0])
     #print("z[i].shape : ", z[i].shape)
     x_maj = x_pred + K @ (z_visible[0] - z_pred[0])
-    #print ("x_maj : ", x_maj)
+    print ("x_maj : ", x_maj)
     #print ("K @ (z[i]-z_pred[0]) : ", K @ (z[i]-z_pred[0]))
     
 
