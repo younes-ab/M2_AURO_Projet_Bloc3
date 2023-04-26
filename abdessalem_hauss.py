@@ -48,6 +48,21 @@ def generation_amers(Nb_amer : int, x : float, y : float, incertitude_amer : flo
     return m
 
 
+# Generation trajectoire
+def generation_trajectoire(r : float, u : float, w : float, t : float):
+    if(u[t,1] == 0):
+        r[t,0] = r[t-1,0] + (u[t,0]) * math.cos(r[t-1,2]) + w[0]
+        r[t,1] = r[t-1,1] + (u[t,0]) * math.sin(r[t-1,2]) + w[1]
+        r[t,2] = r[t-1,2] + u[t,1] + w[2]
+    else:   
+        r[t,0] = r[t-1,0] + (u[t,0]/u[t,1]) * (math.sin(r[t-1,2]+u[t,1]) - math.sin(r[t-1,2])) + w[0]
+        r[t,1] = r[t-1,1] + (u[t,0]/u[t,1]) * (math.cos(r[t-1,2]) - math.cos(r[t-1,2]+u[t,1])) + w[1]
+        r[t,2] = r[t-1,2] + u[t,1] + w[2]
+    return (r)
+
+# u[t] = np.array([1,0])
+
+
 # Generation mesures
 
 
