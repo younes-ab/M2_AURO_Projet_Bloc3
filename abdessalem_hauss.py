@@ -47,20 +47,66 @@ def generation_amers(Nb_amer : int, x : float, y : float, incertitude_amer : flo
 
     return m
 
-
-# Generation trajectoire
-def generation_trajectoire(r : float, u : float, w : float, t : float):
-    if(u[t,1] == 0):
-        r[t,0] = r[t-1,0] + (u[t,0]) * math.cos(r[t-1,2]) + w[0]
-        r[t,1] = r[t-1,1] + (u[t,0]) * math.sin(r[t-1,2]) + w[1]
-        r[t,2] = r[t-1,2] + u[t,1] + w[2]
-    else:   
-        r[t,0] = r[t-1,0] + (u[t,0]/u[t,1]) * (math.sin(r[t-1,2]+u[t,1]) - math.sin(r[t-1,2])) + w[0]
-        r[t,1] = r[t-1,1] + (u[t,0]/u[t,1]) * (math.cos(r[t-1,2]) - math.cos(r[t-1,2]+u[t,1])) + w[1]
-        r[t,2] = r[t-1,2] + u[t,1] + w[2]
+#
+def avance_robot(r : float, u : float, w : float, t : float):
+    if (u[t, 1] == 0):
+        r[t+1, 0] = r[t, 0] + (u[t, 0]) * math.cos(r[t, 2]) + w[0,0]
+        r[t+1, 1] = r[t, 1] + (u[t, 0]) * math.sin(r[t, 2]) + w[0,1]
+        r[t+1, 2] = r[t, 2] + u[t, 1] + w[0,2]
+    else:
+        r[t+1, 0] = r[t, 0] + (u[t, 0] / u[t, 1]) * (math.sin(r[t, 2] + u[t, 1]) - math.sin(r[t, 2])) + w[0,0]
+        r[t+1, 1] = r[t, 1] + (u[t, 0] / u[t, 1]) * (math.cos(r[t, 2]) - math.cos(r[t, 2] + u[t, 1])) + w[0,1]
+        r[t+1, 2] = r[t, 2] + u[t, 1] + w[0,2]
     return (r)
 
-# u[t] = np.array([1,0])
+# Generation trajectoire
+def generation_trajectoire(nb_amer : float, r : float, position_amers : float, u : float, w : float, x_r : float,
+                           y_r : float, theta_r : float, t : float):
+    i = 0
+    r[0,:] = [x_r, y_r, theta_r]
+    dist = r[0, 0] - position_amers[nb_amer]  # x_robot - x_amer_(4)
+
+    # Aller en x
+    while(dist < 0):
+        u[t] = np.array([1, 0])
+        r = avance_robot(r, u, w, t)
+        dist = r[i, 0] - position_amers[nb_amer]
+        i += 1
+        t += 1
+
+    # Rotation
+    while (r[i, 2] < np.pi * 0.95):
+        u[t] = np.array([0.5 , np.pi/8])
+        r = avance_robot(r, u, w, t)
+        i += 1
+        t += 1
+
+    # Retour en x
+    dist = r[i, 0] - position_amers[0]
+    while (dist > 0):
+        u[t] = np.array([1, 0])
+        r = avance_robot(r, u, w, t)
+        dist = r[i, 0] - position_amers[0]
+        i += 1
+        t += 1
+
+    # Rotation
+    while (r[i, 2] < np.pi * 2 * 0.95):
+        u[t] = np.array([0.5 , np.pi/8])
+        r = avance_robot(r, u, w, t)
+        i += 1
+        t += 1
+
+    # Aller 2 en x
+    dist = r[i, 0] - position_amers[2]
+    while (dist < 0 or i < 38):
+        u[t] = np.array([1, 0])
+        r = avance_robot(r, u, w, t)
+        dist = r[i, 0] - position_amers[2]
+        i += 1
+        t += 1
+    return t, r, u
+
 
 
 # Generation mesures
@@ -83,14 +129,15 @@ def main():
     y_r = 0
     theta_r = 0
     nb_amer = 8
-    r = np.array([[x_r, y_r, theta_r]])
-    # r1 = np.array([[x_r, y_r, theta_r]])
-    u = np.array([[1, 0]])
+    r = np.zeros((39,3))
+    u = np.zeros((39,2))
+    Qw = np.diag([0.00001, 0.00001, 0.00001])
+    w = np.transpose((np.linalg.cholesky(Qw)) @ (np.random.normal(size=(3, 39))))
 
     incertitude_amer = np.diag(0.0001 * np.ones(2 * nb_amer))                    # attention, a reverifier
 
     position_amers = generation_amers(nb_amer, 1, -1, incertitude_amer)
-
+    t, r, u = generation_trajectoire(nb_amer, r, position_amers, u, w, x_r, y_r, theta_r, t)
 
 
     affichage(position_amers, r, t)
