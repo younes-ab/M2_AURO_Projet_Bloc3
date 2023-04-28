@@ -15,7 +15,7 @@ def affichage(pos_a: float, r: float, t: int):
         plt.scatter(pos_a[i], pos_a[i + 1])
 
     # Affichage de la trajectoire du robot dans la map
-    plt.plot(r[:, 0], r[:, 1])
+    plt.plot(r[:t+1, 0], r[:t+1, 1])
     # Affichage du robot dans son dernier etat
     plt.scatter(r[t, 0], r[t, 1])  # remplacer t par le dernier indice du vecteur Temps
     # Affichage des états robot
@@ -50,20 +50,20 @@ def generation_amers(Nb_amer : int, x : float, y : float, incertitude_amer : flo
 #
 def avance_robot(r : float, u : float, w : float, t : float):
     if (u[t, 1] == 0):
-        r[t+1, 0] = r[t, 0] + (u[t, 0]) * math.cos(r[t, 2]) + w[0,0]
-        r[t+1, 1] = r[t, 1] + (u[t, 0]) * math.sin(r[t, 2]) + w[0,1]
+        r[t+1, 0] = r[t, 0] + u[t, 0] * math.cos(r[t, 2]) + w[0,0]
+        r[t+1, 1] = r[t, 1] + u[t, 0] * math.sin(r[t, 2]) + w[0,1]
         r[t+1, 2] = r[t, 2] + u[t, 1] + w[0,2]
     else:
         r[t+1, 0] = r[t, 0] + (u[t, 0] / u[t, 1]) * (math.sin(r[t, 2] + u[t, 1]) - math.sin(r[t, 2])) + w[0,0]
         r[t+1, 1] = r[t, 1] + (u[t, 0] / u[t, 1]) * (math.cos(r[t, 2]) - math.cos(r[t, 2] + u[t, 1])) + w[0,1]
         r[t+1, 2] = r[t, 2] + u[t, 1] + w[0,2]
-    return (r)
+    return r
 
 # Generation trajectoire
 def generation_trajectoire(nb_amer : float, r : float, position_amers : float, u : float, w : float, x_r : float,
                            y_r : float, theta_r : float, t : float):
     i = 0
-    r[0,:] = [x_r, y_r, theta_r]
+    r[0, :] = [x_r, y_r, theta_r]
     dist = r[0, 0] - position_amers[nb_amer]  # x_robot - x_amer_(4)
 
     # Aller en x
@@ -76,7 +76,7 @@ def generation_trajectoire(nb_amer : float, r : float, position_amers : float, u
 
     # Rotation
     while (r[i, 2] < np.pi * 0.95):
-        u[t] = np.array([0.5 , np.pi/8])
+        u[t] = np.array([0.5, np.pi/8])
         r = avance_robot(r, u, w, t)
         i += 1
         t += 1
@@ -92,7 +92,7 @@ def generation_trajectoire(nb_amer : float, r : float, position_amers : float, u
 
     # Rotation
     while (r[i, 2] < np.pi * 2 * 0.95):
-        u[t] = np.array([0.5 , np.pi/8])
+        u[t] = np.array([0.5, np.pi/8])
         r = avance_robot(r, u, w, t)
         i += 1
         t += 1
@@ -110,7 +110,18 @@ def generation_trajectoire(nb_amer : float, r : float, position_amers : float, u
 
 
 # Generation mesures
+def generation_mesure(nb_amer : float, z1:float, r1:float, pos_a:float, v:float, t : float):
+    for i in range(t):
+        for e in range(nb_amer):
+            z1[i, e*2] = math.sqrt((pos_a[2*e]-r1[i,0])**2 + (pos_a[2*e+1]-r1[i,1])**2) + v[0,e]
+            z1[i, 2*e+1] = math.atan2(pos_a[2*e+1]-r1[i,1], pos_a[2*e]-r1[i,0]) + v[0,e+1] - r1[i,2] %(np.pi*2)
 
+            if (z1[i,e*2] > 4 or abs(z1[i,e*2+1])>np.pi/2):
+                z1[i, e * 2] = np.nan
+                z1[i, e * 2 + 1] = np.nan
+        print("z1 : ", z1)
+    print("z1.shape : ", z1.shape)
+    return z1
 
 
 
@@ -129,18 +140,22 @@ def main():
     y_r = 0
     theta_r = 0
     nb_amer = 8
-    r = np.zeros((39,3))
-    u = np.zeros((39,2))
+    r = np.zeros((45,3))
+    u = np.zeros((45,2))
+    z = np.zeros((45,2))
     Qw = np.diag([0.00001, 0.00001, 0.00001])
-    w = np.transpose((np.linalg.cholesky(Qw)) @ (np.random.normal(size=(3, 39))))
+    w = np.transpose((np.linalg.cholesky(Qw)) @ (np.random.normal(size=(3, 39))))               # a verifier math
+    Rv = np.diag(0.0001 * np.ones(2 * nb_amer))
+    v = np.transpose((np.linalg.cholesky(Rv)) @ (np.random.normal(size=(2 * nb_amer, 39))))     # a verifier math
 
     incertitude_amer = np.diag(0.0001 * np.ones(2 * nb_amer))                    # attention, a reverifier
 
-    position_amers = generation_amers(nb_amer, 1, -1, incertitude_amer)
-    t, r, u = generation_trajectoire(nb_amer, r, position_amers, u, w, x_r, y_r, theta_r, t)
+    position_amer = generation_amers(nb_amer, 1, -1, incertitude_amer)
+    t, r, u = generation_trajectoire(nb_amer, r, position_amer, u, w, x_r, y_r, theta_r, t)
+    z = generation_mesure(nb_amer, r, z, position_amer, v, t)
 
 
-    affichage(position_amers, r, t)
+    affichage(position_amer, r, t)
 
 
 
