@@ -17,7 +17,7 @@ def affichage(pos_a: float, r: float, x_maj: float, t: int):
     # Affichage de la trajectoire du robot dans la map
     plt.plot(r[:t+1, 0], r[:t+1, 1])
     # Affichage du robot dans son dernier etat
-    plt.scatter(r[t, 0], r[t, 1])  # remplacer t par le dernier indice du vecteur Temps
+    plt.scatter(r[t, 0], r[t, 1])  
     # Affichage des états robot
     plt.plot(x_maj[:t+1, 0], x_maj[:t+1, 1])
     # Affichage du robot dans son dernier etat predit
@@ -53,12 +53,12 @@ def avance_robot(r : float, u : float, w : float, position_amer : float, t : flo
         r[t+1, 0] = r[t, 0] + (u[t, 0]) * math.cos(r[t, 2]) + w[0,0]
         r[t+1, 1] = r[t, 1] + (u[t, 0]) * math.sin(r[t, 2]) + w[0,1]
         r[t+1, 2] = r[t, 2] + u[t, 1] + w[0,2]
-        r[t+1, 3:] = position_amer
+        r[t+1, 3:] = position_amer + w[0,3:]
     else:
         r[t+1, 0] = r[t, 0] + (u[t, 0] / u[t, 1]) * (math.sin(r[t, 2] + u[t, 1]) - math.sin(r[t, 2])) + w[0,0]
         r[t+1, 1] = r[t, 1] + (u[t, 0] / u[t, 1]) * (math.cos(r[t, 2]) - math.cos(r[t, 2] + u[t, 1])) + w[0,1]
         r[t+1, 2] = r[t, 2] + u[t, 1] + w[0,2]
-        r[t+1, 3:] = position_amer
+        r[t+1, 3:] = position_amer + w[0,3:]
     return r
 
 # Generation trajectoire
@@ -77,7 +77,7 @@ def generation_trajectoire(nb_amer : float, x : float, position_amers : float, u
         t += 1
 
     # Rotation
-    while (x[i, 2] < np.pi * 0.95):
+    while (x[i, 2] < np.pi * 0.97):
         u[t] = np.array([0.2, np.pi/10])
         x = avance_robot(x, u, w, position_amers, t)
         i += 1
@@ -93,7 +93,7 @@ def generation_trajectoire(nb_amer : float, x : float, position_amers : float, u
         t += 1
 
     # Rotation
-    while (x[i, 2] < np.pi * 2 * 0.95):
+    while (x[i, 2] < np.pi * 2 * 0.97):
         u[t] = np.array([0.2, np.pi/10])
         x = avance_robot(x, u, w, position_amers, t)
         i += 1
@@ -121,7 +121,6 @@ def generation_mesure(nb_amer : float, z1:float, r1:float, pos_a:float, v:float,
             if (z1[i, e * 2] > 3 or abs(z1[i, e * 2 + 1]) > 3*np.pi/4 ):
                 z1[i, e * 2] = np.nan
                 z1[i, e * 2 + 1] = np.nan
-        #print("z1[t] : ", z1[i])
     return z1
 
 # Filtre
@@ -140,15 +139,15 @@ def filtre(x_pred : float, P_pred : float, x_maj : float, P_maj : float, K : flo
 
         # Prediction
         if (u[i, 1] == 0):
-            x_pred[i, 0] = x_maj[i, 0] + u[i, 0] * math.cos(x_maj[i, 2])
-            x_pred[i, 1] = x_maj[i, 1] + u[i, 0] * math.sin(x_maj[i, 2])
-            x_pred[i, 2] = x_maj[i, 2] + u[i, 1]
-            x_pred[i, 3:] = position_amer
+            x_pred[i+1, 0] = x_maj[i, 0] + u[i, 0] * math.cos(x_maj[i, 2])
+            x_pred[i+1, 1] = x_maj[i, 1] + u[i, 0] * math.sin(x_maj[i, 2])
+            x_pred[i+1, 2] = x_maj[i, 2] + u[i, 1]
+            x_pred[i+1, 3:] = position_amer
         else:
-            x_pred[i, 0] = x_maj[i, 0] + (u[i, 0] / u[i, 1]) * (math.sin(x_maj[i, 2] + u[i, 1]) - math.sin(x_maj[i,2]))
-            x_pred[i, 1] = x_maj[i, 1] + (u[i, 0] / u[i, 1]) * (math.cos(x_maj[i, 2]) - math.cos(x_maj[i, 2] + u[i, 1]))
-            x_pred[i, 2] = x_maj[i, 2] + u[i, 1]
-            x_pred[i, 3:] = position_amer
+            x_pred[i+1, 0] = x_maj[i, 0] + (u[i, 0] / u[i, 1]) * (math.sin(x_maj[i, 2] + u[i, 1]) - math.sin(x_maj[i,2]))
+            x_pred[i+1, 1] = x_maj[i, 1] + (u[i, 0] / u[i, 1]) * (math.cos(x_maj[i, 2]) - math.cos(x_maj[i, 2] + u[i, 1]))
+            x_pred[i+1, 2] = x_maj[i, 2] + u[i, 1]
+            x_pred[i+1, 3:] = position_amer
 
         F = jacF(x_pred, u, i)
 
@@ -159,10 +158,9 @@ def filtre(x_pred : float, P_pred : float, x_maj : float, P_maj : float, K : flo
         H = np.zeros((len(amers_visibles * 2), 19))
         Rv = np.zeros((len(amers_visibles * 2), len(amers_visibles * 2)))
         for o in range(len(amers_visibles)):
-            Rv[2 * o][2 * o] = 0.01
+            Rv[2 * o][2 * o] = 0.1
             Rv[2 * o + 1][2 * o + 1] = np.pi / 10
-        Rv = np.diag(0.0001 * np.ones(len(amers_visibles * 2)))                                        # a checker
-
+    
         for e in range(len(amers_visibles)):
             z_visible[0, e * 2] = z[i,2 * amers_visibles[e]]
             z_visible[0, 2 * e + 1] = z[i,2 * amers_visibles[e] + 1]
@@ -219,12 +217,14 @@ def jacF(x_pred : float, u : float, i : int):
         F_sa[1, 1] = 1
         F_sa[1, 2] = u[i, 0] * math.cos(x_pred[i, 2])
         F_sa[2, 2] = 1
+    
     else:
         F_sa[0, 0] = 1
         F_sa[0, 2] = (u[i, 0] / u[i, 1]) * (math.cos(x_pred[i, 2] + u[i, 1]) - math.cos(x_pred[i, 2]))
         F_sa[1, 1] = 1
         F_sa[1, 2] = (u[i, 0] / u[i, 1]) * (math.sin(x_pred[i, 2] + u[i, 1]) - math.sin(x_pred[i, 2]))
         F_sa[2, 2] = 1
+    
     return F_sa
 
 
@@ -242,10 +242,10 @@ def main():
     x = np.zeros((100,19))
     u = np.zeros((100,2))
     z = np.zeros((100,16))
-    Qw = np.diag([0.0000001, 0.0000001, 0.0000001])
-    w = np.transpose((np.linalg.cholesky(Qw)) @ (np.random.normal(size=(3, 100))))               # a verifier math
+    Qw = np.diag(np.ones(19) * 0.0000001)
+    w = np.transpose((np.linalg.cholesky(Qw)) @ (np.random.normal(size=(19, 100))))               
     Rv = np.diag(0.000001 * np.ones(2 * nb_amer))
-    v = np.transpose((np.linalg.cholesky(Rv)) @ (np.random.normal(size=(2 * nb_amer, 100))))     # a verifier math
+    v = np.transpose((np.linalg.cholesky(Rv)) @ (np.random.normal(size=(2 * nb_amer, 100))))     
 
     # Init Filtre
     x_pred = np.zeros((100, 19))
@@ -254,7 +254,7 @@ def main():
     P_maj = np.zeros((19, 19))
     K = np.zeros((19, 16))
 
-    incertitude_amer = np.diag(0.0001 * np.ones(2 * nb_amer))                    # attention, a reverifier
+    incertitude_amer = np.diag(0.0001 * np.ones(2 * nb_amer))                    
 
     position_amer = generation_amers(nb_amer, 1, -1, incertitude_amer)
     t, x, u = generation_trajectoire(nb_amer, x, position_amer, u, w, x_r, y_r, theta_r, t)
