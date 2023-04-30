@@ -47,7 +47,7 @@ def generation_amers(Nb_amer : int, x : float, y : float, incertitude_amer : flo
 
     return m
 
-#
+# Calcul position robot
 def avance_robot(r : float, u : float, w : float, position_amer : float, t : float):
     if (u[t, 1] == 0):
         r[t+1, 0] = r[t, 0] + (u[t, 0]) * math.cos(r[t, 2]) + w[0,0]
@@ -101,7 +101,7 @@ def generation_trajectoire(nb_amer : float, x : float, position_amers : float, u
 
     # Aller 2 en x
     dist = x[i, 0] - position_amers[2]
-    while (dist < 0 or i < 38):
+    while (dist < 0 ):
         u[t] = np.array([0.5, 0])
         x = avance_robot(x, u, w, position_amers, t)
         dist = x[i, 0] - position_amers[2]
@@ -138,6 +138,7 @@ def filtre(x_pred : float, P_pred : float, x_maj : float, P_maj : float, K : flo
                 amers_visibles = amers_visibles + [j]
         print("amers_visibles : ", amers_visibles)
 
+        # Prediction
         if (u[i, 1] == 0):
             x_pred[i, 0] = x_maj[i, 0] + u[i, 0] * math.cos(x_maj[i, 2])
             x_pred[i, 1] = x_maj[i, 1] + u[i, 0] * math.sin(x_maj[i, 2])
@@ -200,6 +201,7 @@ def filtre(x_pred : float, P_pred : float, x_maj : float, P_maj : float, K : flo
 
         S = Rv + H @ P_pred @ np.transpose(H)
 
+        # Mise a jour
         K = P_pred @ H.T @ np.linalg.inv(S)
 
         x_maj = x_pred + K @ (z_visible[0] - z_pred[0])
